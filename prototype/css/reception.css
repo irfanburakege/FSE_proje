@@ -1,0 +1,66 @@
+/* ═══ RECEPTION DESK DASHBOARD STYLES ═══ */
+
+.reception-layout {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+
+/* ── Doctor Status Board ── */
+.doctor-status-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.doctor-status-card {
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--bg-card);
+  transition: all var(--transition);
+}
+.doctor-status-card.busy {
+  border-color: var(--danger); background: #FEF2F2;
+}
+.doctor-status-card.has-waiting {
+  border-color: var(--warning); background: #FFFBEB;
+}
+.doctor-status-card.free {
+  border-color: var(--success); background: #ECFDF5;
+}
+.ds-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 4px; font-size: .88rem;
+}
+.ds-indicator {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--success);
+}
+.busy .ds-indicator { background: var(--danger); animation: pulse 1.5s infinite; }
+.has-waiting .ds-indicator { background: var(--warning); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+.ds-dept { font-size: .75rem; color: var(--text-secondary); margin-bottom: 6px; }
+.ds-details { display: flex; flex-direction: column; gap: 2px; }
+.ds-current { font-size: .8rem; font-weight: 600; }
+.ds-current.free-text { color: var(--success); }
+
+/* ── Patient Queue ── */
+.queue-body { padding: 12px !important; }
+.queue-list { display: flex; flex-direction: column; gap: 8px; }
+.queue-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--bg); border: 1px solid var(--border-light);
+  transition: all var(--transition);
+}
+.queue-item:hover { background: var(--bg-card); box-shadow: var(--shadow); }
+.qi-position {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .78rem; font-weight: 700; flex-shrink: 0;
+}
+.qi-info { flex: 1; min-width: 0; }
+.qi-info strong { display: block; font-size: .88rem; }
+.qi-meta {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+.qi-actions { flex-shrink: 0; }
