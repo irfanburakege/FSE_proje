@@ -161,3 +161,25 @@
 }
 .confirm-row:last-child { border-bottom: none; }
 .confirm-label { font-weight: 600; color: var(--text-secondary); }
+
+/* ── Mobile Responsive Stepper ── */
+@media (max-width: 768px) {
+  .wizard-steps {
+    padding: 10px;
+    gap: 4px;
+    flex-wrap: nowrap;
+    overflow-x: hidden;
+  }
+  .step-label {
+    display: none; /* Hide labels for inactive steps to save space */
+  }
+  .wizard-step.active .step-label {
+    display: block; /* Only show label for the active step */
+  }
+  .step-connector {
+    flex: 1;
+    min-width: 10px;
+  }
+  .datetime-layout { grid-template-columns: 1fr; }
+  .confirm-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+}

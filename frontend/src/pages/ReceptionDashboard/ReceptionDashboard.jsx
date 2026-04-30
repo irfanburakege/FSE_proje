@@ -50,6 +50,12 @@ export default function ReceptionDashboard() {
     );
   };
 
+  const openRegisterPatient = () => {
+    showModal(
+      <RegisterPatientModal store={store} showToast={showToast} closeModal={closeModal} />
+    );
+  };
+
   return (
     <>
       <div className="page-header">
@@ -57,9 +63,14 @@ export default function ReceptionDashboard() {
           <h2>🖥️ Reception Desk Dashboard</h2>
           <p className="page-subtitle">{formatDate(today)} — Real-time patient flow and queue monitoring</p>
         </div>
-        <button className="btn btn-primary" id="manual-apt-btn" onClick={openManualAppointment}>
-          ➕ Manual Appointment
-        </button>
+        <div className="flex gap-12">
+          <button className="btn btn-outline" onClick={openRegisterPatient}>
+            📝 Register Patient
+          </button>
+          <button className="btn btn-primary" id="manual-apt-btn" onClick={openManualAppointment}>
+            ➕ Manual Appointment
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -302,6 +313,78 @@ function ManualAppointmentModal({ store, showToast, closeModal }) {
 
       <div className="flex gap-8 mt-16">
         <button className="btn btn-primary" onClick={handleCreate}>Create Appointment</button>
+        <button className="btn btn-outline" onClick={closeModal}>Cancel</button>
+      </div>
+    </>
+  );
+}
+
+/* ── Register Patient Modal (For Form Fill-in Screenshot) ── */
+function RegisterPatientModal({ store, showToast, closeModal }) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [dob, setDob] = useState('');
+
+  const handleRegister = () => {
+    if (!name || !phone) {
+      showToast('Name and Phone are required.', 'error');
+      return;
+    }
+    showToast(`Patient ${name} registered successfully!`, 'success');
+    closeModal();
+  };
+
+  return (
+    <>
+      <div className="modal-title">📝 Register New Patient</div>
+      <p className="text-muted text-sm mb-16">Enter patient details into the system.</p>
+
+      <div className="form-group">
+        <label className="form-label">Full Name *</label>
+        <input 
+          type="text" 
+          className="form-input" 
+          placeholder="e.g. Ahmet Yılmaz" 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+        />
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Phone Number *</label>
+        <input 
+          type="tel" 
+          className="form-input" 
+          placeholder="05XX XXX XX XX" 
+          value={phone} 
+          onChange={(e) => setPhone(e.target.value)} 
+        />
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Email Address</label>
+        <input 
+          type="email" 
+          className="form-input" 
+          placeholder="ahmet@example.com" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+        />
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Date of Birth</label>
+        <input 
+          type="date" 
+          className="form-input" 
+          value={dob} 
+          onChange={(e) => setDob(e.target.value)} 
+        />
+      </div>
+
+      <div className="flex gap-8 mt-24">
+        <button className="btn btn-primary" onClick={handleRegister}>Register Patient</button>
         <button className="btn btn-outline" onClick={closeModal}>Cancel</button>
       </div>
     </>

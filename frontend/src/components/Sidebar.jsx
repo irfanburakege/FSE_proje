@@ -24,6 +24,7 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const { store, showToast, forceUpdate } = useStore();
   const [clock, setClock] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     const updateClock = () => {
@@ -43,9 +44,9 @@ export default function Sidebar() {
   };
 
   return (
-    <aside id="sidebar">
+    <aside id="sidebar" className={isCollapsed ? 'collapsed' : ''}>
       <div className="sidebar-brand">
-        <div className="brand-icon-wrap">
+        <div className="brand-icon-wrap" onClick={() => setIsCollapsed(!isCollapsed)} style={{ cursor: 'pointer' }} title="Toggle Sidebar">
           <span className="brand-icon">🏥</span>
         </div>
         <div className="brand-text">
@@ -65,6 +66,7 @@ export default function Sidebar() {
                 to={item.path}
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 id={`nav-${item.path.replace('/', '')}`}
+                title={isCollapsed ? item.label : ''}
               >
                 <span className="nav-icon">{item.icon}</span>
                 <span className="nav-label">{item.label}</span>
@@ -76,8 +78,8 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <div className="sidebar-clock" id="sidebar-clock">{clock}</div>
-        <button id="reset-demo-btn" className="btn btn-reset" onClick={handleReset}>
-          🔄 Reset Demo Data
+        <button id="reset-demo-btn" className="btn btn-reset" onClick={handleReset} title="Reset Demo Data">
+          🔄 <span>Reset Demo Data</span>
         </button>
       </div>
     </aside>
