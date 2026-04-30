@@ -37,7 +37,7 @@ function createDefaults() {
   ];
 
   const schedules = doctors.map(d => ({
-    scheduleID: `SCH-${d.doctorID}`, doctorID: d.doctorID, date: today,
+    scheduleID: `SCH-${d.doctorID}`, doctorID: d.doctorID,
     workStart: '09:00', workEnd: '17:00', breakStart: '12:00', breakEnd: '13:00', maxPatients: 16,
   }));
 
@@ -73,8 +73,16 @@ function createDefaults() {
     { appointmentID: 'APT-010', patientID: 'PAT-10', doctorID: 'DOC-05', departmentID: 'DEP-03', date: today, timeSlot: '10:30', endTime: '11:00', status: 'scheduled' },
   ];
 
-  const visits = [];
-  const notifications = [];
+  const visits = [
+    { visitID: 'VIS-001', appointmentID: 'APT-001', patientID: 'PAT-01', doctorID: 'DOC-01', date: today, checkInTime: new Date(Date.now() - 45*60000).toISOString(), flowStatus: 'completed', priority: 'normal', consultStartTime: new Date(Date.now() - 30*60000).toISOString(), completedTime: new Date(Date.now() - 15*60000).toISOString() },
+    { visitID: 'VIS-002', appointmentID: 'APT-002', patientID: 'PAT-02', doctorID: 'DOC-01', date: today, checkInTime: new Date(Date.now() - 20*60000).toISOString(), flowStatus: 'in-consultation', priority: 'normal', consultStartTime: new Date(Date.now() - 5*60000).toISOString() },
+    { visitID: 'VIS-003', appointmentID: 'APT-003', patientID: 'PAT-03', doctorID: 'DOC-01', date: today, checkInTime: new Date(Date.now() - 10*60000).toISOString(), flowStatus: 'waiting', priority: 'normal' },
+    { visitID: 'VIS-004', appointmentID: 'APT-004', patientID: 'PAT-04', doctorID: 'DOC-03', date: today, checkInTime: new Date(Date.now() - 60*60000).toISOString(), flowStatus: 'assessment', priority: 'normal' },
+    { visitID: 'VIS-005', appointmentID: 'APT-005', patientID: 'PAT-05', doctorID: 'DOC-03', date: today, checkInTime: new Date(Date.now() - 15*60000).toISOString(), flowStatus: 'waiting', priority: 'emergency' },
+  ];
+  const notifications = [
+    { notifID: 'NOT-01', type: 'system', patientID: 'PAT-01', message: 'Appointment confirmed for today.', timestamp: new Date(Date.now() - 120*60000).toISOString(), read: false }
+  ];
   const receptionists = [
     { staffID: 'REC-01', name: 'Gül Yılmaz', shift: 'Morning' },
     { staffID: 'REC-02', name: 'Murat Aksoy', shift: 'Afternoon' },
@@ -117,7 +125,7 @@ class Store {
   getDoctorsByDept(deptID)   { return this.data.doctors.filter(d => d.departmentID === deptID); }
   getPatients()              { return this.data.patients; }
   getPatient(id)             { return this.data.patients.find(p => p.patientID === id); }
-  getSchedule(doctorID, date){ return this.data.schedules.find(s => s.doctorID === doctorID && s.date === (date || getToday())); }
+  getSchedule(doctorID, date){ return this.data.schedules.find(s => s.doctorID === doctorID); }
   getReceptionists()         { return this.data.receptionists; }
   getCurrentPatientID()      { return this.data.currentPatientID; }
   setCurrentPatient(id)      { this.data.currentPatientID = id; this._save(); }

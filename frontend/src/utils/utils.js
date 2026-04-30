@@ -77,21 +77,21 @@ export function generateTimeSlots(workStart, workEnd, breakStart, breakEnd, slot
 
 /* ── Status Configuration ── */
 export const FLOW_STATUSES = {
-  'new-entry':        { label: 'New Entry',        color: '#3B82F6', bg: '#EFF6FF', icon: '🆕' },
-  'checked-in':       { label: 'Checked In',       color: '#F59E0B', bg: '#FFFBEB', icon: '📋' },
-  'waiting':          { label: 'Waiting',           color: '#F97316', bg: '#FFF7ED', icon: '⏳' },
-  'in-consultation':  { label: 'In Consultation',   color: '#EF4444', bg: '#FEF2F2', icon: '🩺' },
-  'assessment':       { label: 'Assessment',        color: '#8B5CF6', bg: '#F5F3FF', icon: '🔬' },
-  'completed':        { label: 'Completed',         color: '#10B981', bg: '#ECFDF5', icon: '✅' },
-  'no-show':          { label: 'No Show',           color: '#6B7280', bg: '#F3F4F6', icon: '❌' },
-  'cancelled':        { label: 'Cancelled',         color: '#6B7280', bg: '#F3F4F6', icon: '🚫' },
+  'new-entry': { label: 'New Entry', color: '#3B82F6', bg: '#EFF6FF', icon: '🆕' },
+  'checked-in': { label: 'Checked In', color: '#F59E0B', bg: '#FFFBEB', icon: '📋' },
+  'waiting': { label: 'Waiting', color: '#F97316', bg: '#FFF7ED', icon: '⏳' },
+  'in-consultation': { label: 'In Consultation', color: '#EF4444', bg: '#FEF2F2', icon: '🩺' },
+  'assessment': { label: 'Assessment', color: '#8B5CF6', bg: '#F5F3FF', icon: '🔬' },
+  'completed': { label: 'Completed', color: '#10B981', bg: '#ECFDF5', icon: '✅' },
+  'no-show': { label: 'No Show', color: '#6B7280', bg: '#F3F4F6', icon: '❌' },
+  'cancelled': { label: 'Cancelled', color: '#6B7280', bg: '#F3F4F6', icon: '🚫' },
 };
 
 export const APPOINTMENT_STATUSES = {
-  'scheduled':  { label: 'Scheduled',  color: '#3B82F6' },
-  'completed':  { label: 'Completed',  color: '#10B981' },
-  'cancelled':  { label: 'Cancelled',  color: '#6B7280' },
-  'no-show':    { label: 'No Show',    color: '#EF4444' },
+  'scheduled': { label: 'Scheduled', color: '#3B82F6' },
+  'completed': { label: 'Completed', color: '#10B981' },
+  'cancelled': { label: 'Cancelled', color: '#6B7280' },
+  'no-show': { label: 'No Show', color: '#EF4444' },
 };
 
 /* ── Time elapsed helper ── */
