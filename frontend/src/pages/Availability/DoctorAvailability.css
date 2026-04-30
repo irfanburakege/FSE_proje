@@ -1,0 +1,79 @@
+.availability-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.day-col {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.day-header {
+  padding: 10px;
+  text-align: center;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.day-slots {
+  padding: 8px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slot-card {
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-left: 3px solid;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.slot-card:hover {
+  transform: scale(1.02);
+}
+
+.slot-work {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-left-color: var(--primary);
+}
+
+.slot-break {
+  background: #FEF3C7;
+  color: #92400E;
+  border-left-color: var(--warning);
+}
+
+.slot-off {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border-left-color: var(--danger);
+}
+
+@media (max-width: 1024px) {
+  .availability-grid {
+    grid-template-columns: 1fr;
+  }
+}

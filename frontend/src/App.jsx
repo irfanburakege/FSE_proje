@@ -6,10 +6,15 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar.jsx';
 import Toast from './components/Toast.jsx';
 import Modal from './components/Modal.jsx';
+
 import PatientPortal from './pages/PatientPortal/PatientPortal.jsx';
 import DoctorDashboard from './pages/DoctorDashboard/DoctorDashboard.jsx';
 import ReceptionDashboard from './pages/ReceptionDashboard/ReceptionDashboard.jsx';
-import Placeholder from './pages/Placeholder.jsx';
+import DoctorAvailability from './pages/Availability/DoctorAvailability.jsx';
+import ReportsDashboard from './pages/Reports/ReportsDashboard.jsx';
+import NotificationsPage from './pages/Notifications/NotificationsPage.jsx';
+import AuditLog from './pages/AuditLog/AuditLog.jsx';
+import SettingsPage from './pages/Settings/SettingsPage.jsx';
 
 export default function App() {
   return (
@@ -22,11 +27,11 @@ export default function App() {
               <Route path="/patient" element={<PatientPortal />} />
               <Route path="/doctor" element={<DoctorDashboard />} />
               <Route path="/reception" element={<ReceptionDashboard />} />
-              <Route path="/availability" element={<Placeholder />} />
-              <Route path="/reports" element={<Placeholder />} />
-              <Route path="/notifications" element={<Placeholder />} />
-              <Route path="/audit" element={<Placeholder />} />
-              <Route path="/settings" element={<Placeholder />} />
+              <Route path="/availability" element={<DoctorAvailability />} />
+              <Route path="/reports" element={<ReportsDashboard />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/audit" element={<AuditLog />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/patient" replace />} />
             </Routes>
           </div>
