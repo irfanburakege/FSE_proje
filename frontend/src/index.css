@@ -317,3 +317,42 @@ tr:hover td { background: var(--bg); }
 
 /* ── My Appointments table code style ── */
 code { font-family: 'SF Mono', 'Monaco', monospace; background: var(--bg); padding: 2px 6px; border-radius: 4px; }
+
+/* ═══ MOBILE RESPONSIVENESS ═══ */
+@media (max-width: 768px) {
+  #app {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  #sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    max-height: 300px;
+  }
+  .sidebar-brand {
+    justify-content: center;
+  }
+  .brand-text h1 { font-size: 1.2rem; }
+  .nav-item { justify-content: center; }
+  .nav-icon { margin-right: 0; }
+  .nav-item span:not(.nav-icon) { display: none; }
+  .nav-section-label { display: none; }
+  
+  #main-content {
+    padding: 16px;
+    height: auto;
+    overflow-y: visible;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
