@@ -45,8 +45,8 @@ export default function AppointmentForm({ onComplete }) {
     setSelectedSlot(slot);
   };
 
-  const handleConfirm = () => {
-    const result = store.createAppointment({
+  const handleConfirm = async () => {
+    const result = await store.createAppointment({
       patientID: store.getCurrentPatientID(),
       doctorID: selectedDoctor.doctorID,
       departmentID: selectedDept.deptID,

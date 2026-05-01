@@ -3,11 +3,11 @@
  * Real-time overview: stats, patient queue, doctor status board,
  * check-in, priority management, and manual appointment creation.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useModal } from '../../context/StoreContext.jsx';
 import { useStoreEvents, PATIENT_FLOW_EVENTS } from '../../hooks/useStoreEvents.js';
-import { getToday, formatTime, formatDate, waitMinutes, getWeekdayDates } from '../../utils/utils.js';
+import { getToday, formatTime, formatDate, formatDateShort, waitMinutes, getWeekdayDates } from '../../utils/utils.js';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import './ReceptionDashboard.css';
@@ -19,29 +19,77 @@ export default function ReceptionDashboard() {
   useStoreEvents(PATIENT_FLOW_EVENTS);
 
   const today = getToday();
-  const stats = store.getDayStats(today);
-  const allAppointments = store.getAppointments({ date: today })
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [queuePage, setQueuePage] = useState(1);
+  const [filterDeptID, setFilterDeptID] = useState('');
+  const [filterDoctorID, setFilterDoctorID] = useState('');
+  const itemsPerPage = 10;
+
+  const departments = store.getDepartments();
+  const doctors = store.getDoctors();
+  const filteredDoctors = filterDeptID ? store.getDoctorsByDept(filterDeptID) : doctors;
+
+  const allAppointments = store.getAppointments({ date: selectedDate })
     .filter(a => a.status !== 'cancelled')
     .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
-  const allVisits = store.getVisits({ date: today });
-  const allQueues = store.getAllQueues(today);
-  const doctors = store.getDoctors();
+  const allVisits = store.getVisits({ date: selectedDate });
+  const allQueues = store.getAllQueues(selectedDate);
+
+  const filteredAppointments = allAppointments.filter(a => {
+    if (filterDeptID && store.getDepartment(a.departmentID)?.deptID !== filterDeptID) return false;
+    if (filterDoctorID && a.doctorID !== filterDoctorID) return false;
+    return true;
+  });
+
+  const filteredQueues = allQueues.filter(v => {
+    const doc = store.getDoctor(v.doctorID);
+    if (filterDeptID && doc?.departmentID !== filterDeptID) return false;
+    if (filterDoctorID && v.doctorID !== filterDoctorID) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredAppointments.length / itemsPerPage));
+  const paginatedAppointments = filteredAppointments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const pageStart = filteredAppointments.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const pageEnd = Math.min(filteredAppointments.length, currentPage * itemsPerPage);
+
+  const queueTotalPages = Math.max(1, Math.ceil(filteredQueues.length / itemsPerPage));
+  const paginatedQueues = filteredQueues.slice((queuePage - 1) * itemsPerPage, queuePage * itemsPerPage);
+  const queueStart = filteredQueues.length === 0 ? 0 : (queuePage - 1) * itemsPerPage + 1;
+  const queueEnd = Math.min(filteredQueues.length, queuePage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setQueuePage(1);
+  }, [selectedDate, filterDeptID, filterDoctorID]);
+
+  const stats = {
+    total: allAppointments.length,
+    waiting: allQueues.length,
+    inConsultation: allVisits.filter(v => v.flowStatus === 'in-consultation').length,
+    assessment: allVisits.filter(v => v.flowStatus === 'assessment').length,
+    completed: allVisits.filter(v => v.flowStatus === 'completed').length,
+    noShow: allVisits.filter(v => v.flowStatus === 'no-show').length,
+  };
 
   /* ── Queue Manager Actions ── */
-  const checkInPatient = (appointmentID) => {
-    const result = store.checkInPatient(appointmentID);
+  const checkInPatient = async (appointmentID) => {
+    const result = await store.checkInPatient(appointmentID);
     if (result.error) showToast(result.error, 'warning');
     else showToast('Patient checked in successfully!', 'success');
   };
 
-  const setEmergencyPriority = (visitID) => {
-    store.setPriority(visitID, 'emergency');
-    showToast('🚨 Patient flagged as EMERGENCY — moved to front of queue.', 'warning');
+  const setEmergencyPriority = async (visitID) => {
+    const result = await store.setPriority(visitID, 'emergency');
+    if (result?.error) showToast(result.error, 'error');
+    else showToast('🚨 Patient flagged as EMERGENCY — moved to front of queue.', 'warning');
   };
 
-  const setNormalPriority = (visitID) => {
-    store.setPriority(visitID, 'normal');
-    showToast('Priority reset to normal.', 'info');
+  const setNormalPriority = async (visitID) => {
+    const result = await store.setPriority(visitID, 'normal');
+    if (result?.error) showToast(result.error, 'error');
+    else showToast('Priority reset to normal.', 'info');
   };
 
   const openManualAppointment = () => {
@@ -63,13 +111,56 @@ export default function ReceptionDashboard() {
           <h2>🖥️ Reception Desk Dashboard</h2>
           <p className="page-subtitle">{formatDate(today)} — Real-time patient flow and queue monitoring</p>
         </div>
-        <div className="flex gap-12">
+        <div className="flex gap-12 flex-wrap items-center mb-16">
           <button className="btn btn-outline" onClick={openRegisterPatient}>
             📝 Register Patient
           </button>
           <button className="btn btn-primary" id="manual-apt-btn" onClick={openManualAppointment}>
             ➕ Manual Appointment
           </button>
+        </div>
+        <div className="flex gap-12 flex-wrap items-center">
+          <div className="flex items-center gap-8">
+            <label className="form-label" style={{ margin: 0 }}>Date:</label>
+            <input
+              type="date"
+              className="form-input"
+              value={selectedDate}
+              min={today}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ width: 170 }}
+            />
+          </div>
+          <div className="flex items-center gap-8">
+            <label className="form-label" style={{ margin: 0 }}>Department:</label>
+            <select
+              className="form-select"
+              value={filterDeptID}
+              onChange={(e) => {
+                const nextDept = e.target.value;
+                setFilterDeptID(nextDept);
+                if (nextDept && filterDoctorID && !store.getDoctorsByDept(nextDept).some(d => d.doctorID === filterDoctorID)) {
+                  setFilterDoctorID('');
+                }
+              }}
+              style={{ width: 180 }}
+            >
+              <option value="">All Departments</option>
+              {departments.map(d => <option key={d.deptID} value={d.deptID}>{d.name}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-8">
+            <label className="form-label" style={{ margin: 0 }}>Doctor:</label>
+            <select
+              className="form-select"
+              value={filterDoctorID}
+              onChange={(e) => setFilterDoctorID(e.target.value)}
+              style={{ width: 220 }}
+            >
+              <option value="">All Doctors</option>
+              {filteredDoctors.map(d => <option key={d.doctorID} value={d.doctorID}>{d.name}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -122,17 +213,17 @@ export default function ReceptionDashboard() {
         <div className="card">
           <div className="card-header">
             <h3>📋 Patient Queue</h3>
-            <span className="text-sm text-muted">{allQueues.length} in queue</span>
+            <span className="text-sm text-muted">{filteredQueues.length} in queue</span>
           </div>
           <div className="card-body queue-body">
-            {allQueues.length === 0 ? (
+            {filteredQueues.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">✨</div>
                 <p>Queue is empty — no patients currently waiting.</p>
               </div>
             ) : (
               <div className="queue-list">
-                {allQueues.map((visit, i) => {
+                {paginatedQueues.map((visit, i) => {
                   const pat = store.getPatient(visit.patientID);
                   const doc = store.getDoctor(visit.doctorID);
                   const dept = store.getDepartment(doc?.departmentID);
@@ -166,14 +257,34 @@ export default function ReceptionDashboard() {
               </div>
             )}
           </div>
+          <div className="pagination-footer flex items-center justify-between mt-16">
+            <span className="text-sm text-muted">Showing {queueStart}-{queueEnd} of {filteredQueues.length}</span>
+            <div className="flex items-center gap-8">
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={queuePage === 1}
+                onClick={() => setQueuePage(queuePage - 1)}
+              >
+                ← Prev
+              </button>
+              <span className="text-sm">Page {queuePage} / {queueTotalPages}</span>
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={queuePage === queueTotalPages}
+                onClick={() => setQueuePage(queuePage + 1)}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* All Appointments Table */}
       <div className="card mt-24">
         <div className="card-header">
-          <h3>📅 All Today's Appointments</h3>
-          <span className="text-sm text-muted">{allAppointments.length} appointments</span>
+          <h3>📅 {selectedDate === today ? "All Today's Appointments" : `All ${formatDateShort(selectedDate)} Appointments`}</h3>
+          <span className="text-sm text-muted">{filteredAppointments.length} appointments</span>
         </div>
         <div className="table-wrap">
           <table>
@@ -181,13 +292,15 @@ export default function ReceptionDashboard() {
               <tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Department</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              {allAppointments.map(apt => {
+              {paginatedAppointments.length === 0 ? (
+                <tr><td colSpan="6" className="text-muted" style={{ textAlign: 'center', padding: 24 }}>{selectedDate === today ? 'No appointments for today' : `No appointments for ${formatDateShort(selectedDate)}`}</td></tr>
+              ) : paginatedAppointments.map(apt => {
                 const pat = store.getPatient(apt.patientID);
                 const doc = store.getDoctor(apt.doctorID);
                 const dept = store.getDepartment(apt.departmentID);
                 const visit = allVisits.find(v => v.appointmentID === apt.appointmentID);
                 const flowStatus = visit ? visit.flowStatus : (apt.status === 'no-show' ? 'no-show' : 'new-entry');
-                const canCheckIn = !visit && apt.status === 'scheduled';
+                const canCheckIn = !visit && ['requested'].includes(apt.status);
 
                 return (
                   <tr key={apt.appointmentID}>
@@ -208,6 +321,26 @@ export default function ReceptionDashboard() {
               })}
             </tbody>
           </table>
+        </div>
+        <div className="pagination-footer flex items-center justify-between mt-16">
+          <span className="text-sm text-muted">Showing {pageStart}-{pageEnd} of {filteredAppointments.length}</span>
+          <div className="flex items-center gap-8">
+            <button
+              className="btn btn-outline btn-sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+            >
+              ← Prev
+            </button>
+            <span className="text-sm">Page {currentPage} / {totalPages}</span>
+            <button
+              className="btn btn-outline btn-sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >
+              Next →
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -238,13 +371,13 @@ function ManualAppointmentModal({ store, showToast, closeModal }) {
     setSlotVal('');
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!slotVal || !doctorID) {
       showToast('Please fill all fields.', 'warning');
       return;
     }
     const [timeSlot, endTime] = slotVal.split('|');
-    const result = store.createAppointment({
+    const result = await store.createAppointment({
       patientID,
       doctorID,
       departmentID: deptID,
@@ -281,8 +414,9 @@ function ManualAppointmentModal({ store, showToast, closeModal }) {
       <div className="form-group">
         <label className="form-label">Doctor</label>
         <select className="form-select" value={doctorID} onChange={handleDoctorChange}>
+          <option value="">Select doctor...</option>
           {doctors.length === 0 ? (
-            <option value="">Select department first</option>
+            <option value="" disabled>Select department first</option>
           ) : (
             doctors.map(d => <option key={d.doctorID} value={d.doctorID}>{d.name}</option>)
           )}
@@ -299,8 +433,9 @@ function ManualAppointmentModal({ store, showToast, closeModal }) {
       <div className="form-group">
         <label className="form-label">Time Slot</label>
         <select className="form-select" value={slotVal} onChange={(e) => setSlotVal(e.target.value)}>
+          <option value="">Select time slot...</option>
           {slots.length === 0 ? (
-            <option value="">Select doctor & date first</option>
+            <option value="" disabled>{doctorID && date ? 'No available slots for selected doctor/date' : 'Select doctor & date first'}</option>
           ) : (
             slots.map(s => (
               <option key={s.startTime} value={`${s.startTime}|${s.endTime}`}>
@@ -323,12 +458,21 @@ function ManualAppointmentModal({ store, showToast, closeModal }) {
 function RegisterPatientModal({ store, showToast, closeModal }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [nationalId, setNationalId] = useState('');
   const [dob, setDob] = useState('');
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!name || !phone) {
       showToast('Name and Phone are required.', 'error');
+      return;
+    }
+    const result = await store.createPatient({
+      name,
+      phone_number: phone,
+      national_id: nationalId || null
+    });
+    if (result.error) {
+      showToast(result.error, 'error');
       return;
     }
     showToast(`Patient ${name} registered successfully!`, 'success');
@@ -363,13 +507,13 @@ function RegisterPatientModal({ store, showToast, closeModal }) {
       </div>
 
       <div className="form-group">
-        <label className="form-label">Email Address</label>
+        <label className="form-label">National ID</label>
         <input 
-          type="email" 
+          type="text" 
           className="form-input" 
-          placeholder="ahmet@example.com" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
+          placeholder="11-digit ID (optional)" 
+          value={nationalId} 
+          onChange={(e) => setNationalId(e.target.value)} 
         />
       </div>
 

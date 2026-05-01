@@ -1,13 +1,56 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { apiClient } from '../../api/client.js';
+import { useStore } from '../../context/StoreContext.jsx';
 
 export default function AuditLog() {
-  const mockLogs = [
-    { id: 101, user: 'Admin (System)', action: 'Updated Settings', details: 'Changed max daily patient limit from 40 to 45.', time: '2026-05-01 09:12' },
-    { id: 102, user: 'Receptionist Sarah', action: 'Patient Check-in', details: 'Checked in John Doe for DOC-01.', time: '2026-05-01 08:45' },
-    { id: 103, user: 'Dr. Smith', action: 'Consultation Complete', details: 'Finished consultation for visit V-001.', time: '2026-05-01 08:30' },
-    { id: 104, user: 'Patient App', action: 'New Appointment', details: 'Jane Roe booked an appointment online.', time: '2026-05-01 07:15' },
-    { id: 105, user: 'System Task', action: 'Daily Backup', details: 'Database backup completed successfully.', time: '2026-05-01 00:00' },
-  ];
+  const { showToast } = useStore();
+  const [logs, setLogs] = useState([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadLogs = async (searchText = '') => {
+    try {
+      setIsLoading(true);
+      const query = searchText?.trim()
+        ? `/audit-logs?search=${encodeURIComponent(searchText.trim())}&limit=200`
+        : '/audit-logs?limit=200';
+      const data = await apiClient.get(query);
+      setLogs(Array.isArray(data) ? data : []);
+    } catch (err) {
+      showToast(`Audit logs could not be loaded: ${err.message}`, 'error');
+      setLogs([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLogs('');
+  }, []);
+
+  const handleFilter = () => {
+    setActiveSearch(searchInput);
+    loadLogs(searchInput);
+  };
+
+  const handleClear = () => {
+    setSearchInput('');
+    setActiveSearch('');
+    loadLogs('');
+  };
+
+  const rows = useMemo(
+    () =>
+      logs.map((log) => ({
+        id: log.id,
+        time: log.timestamp ? new Date(log.timestamp).toLocaleString() : '-',
+        user: log.user_name || 'System',
+        action: log.action || '-',
+        details: log.details || '-',
+      })),
+    [logs]
+  );
 
   return (
     <div className="view-enter">
@@ -17,12 +60,32 @@ export default function AuditLog() {
           <p className="page-subtitle">Track all system events and user actions securely</p>
         </div>
         <div className="flex gap-8">
-          <input type="text" className="form-input" placeholder="Search logs..." style={{ width: '200px' }} />
-          <button className="btn btn-primary">Filter</button>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Search logs..."
+            style={{ width: '220px' }}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleFilter();
+            }}
+          />
+          <button className="btn btn-primary" onClick={handleFilter} disabled={isLoading}>
+            Filter
+          </button>
+          <button className="btn btn-secondary" onClick={handleClear} disabled={isLoading}>
+            Clear
+          </button>
         </div>
       </div>
 
       <div className="card">
+        {activeSearch && (
+          <div className="card-body" style={{ paddingBottom: 0 }}>
+            <p className="text-muted">Filtered by: "{activeSearch}"</p>
+          </div>
+        )}
         <div className="table-wrap">
           <table>
             <thead>
@@ -34,7 +97,19 @@ export default function AuditLog() {
               </tr>
             </thead>
             <tbody>
-              {mockLogs.map(log => (
+              {isLoading && (
+                <tr>
+                  <td colSpan={4} className="text-muted">Loading audit logs...</td>
+                </tr>
+              )}
+
+              {!isLoading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-muted">No audit log found.</td>
+                </tr>
+              )}
+
+              {!isLoading && rows.map(log => (
                 <tr key={log.id}>
                   <td style={{ whiteSpace: 'nowrap' }}>{log.time}</td>
                   <td><strong>{log.user}</strong></td>

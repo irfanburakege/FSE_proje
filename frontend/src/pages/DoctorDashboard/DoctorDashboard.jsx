@@ -6,25 +6,26 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useStoreEvents, PATIENT_FLOW_EVENTS } from '../../hooks/useStoreEvents.js';
-import { getToday, formatTime, formatDate, waitMinutes } from '../../utils/utils.js';
+import { getToday, formatTime, formatDate, formatDateShort, waitMinutes } from '../../utils/utils.js';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import './DoctorDashboard.css';
 
 export default function DoctorDashboard() {
-  const { store, eventBus, showToast } = useStore();
-  const [selectedDoctorID, setSelectedDoctorID] = useState('DOC-01');
+  const { store, showToast } = useStore();
+  const [selectedDoctorID, setSelectedDoctorID] = useState(store.getDoctors()[0]?.doctorID || '');
 
   useStoreEvents(PATIENT_FLOW_EVENTS);
 
   const today = getToday();
+  const [selectedDate, setSelectedDate] = useState(today);
   const doctor = store.getDoctor(selectedDoctorID);
   const dept = store.getDepartment(doctor?.departmentID);
-  const schedule = store.getSchedule(selectedDoctorID, today);
-  const appointments = store.getAppointments({ doctorID: selectedDoctorID, date: today })
+  const schedule = store.getSchedule(selectedDoctorID, selectedDate);
+  const appointments = store.getAppointments({ doctorID: selectedDoctorID, date: selectedDate })
     .filter(a => a.status !== 'cancelled')
     .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
-  const visits = store.getVisits({ doctorID: selectedDoctorID, date: today });
+  const visits = store.getVisits({ doctorID: selectedDoctorID, date: selectedDate });
   const inConsult = visits.find(v => v.flowStatus === 'in-consultation');
   const inAssess = visits.find(v => v.flowStatus === 'assessment');
   const completedCount = visits.filter(v => v.flowStatus === 'completed').length;
@@ -32,7 +33,7 @@ export default function DoctorDashboard() {
   const waitingCount = visits.filter(v => ['waiting', 'checked-in'].includes(v.flowStatus)).length;
 
   /* ── Session Manager Actions ── */
-  const startConsultation = (visitID) => {
+  const startConsultation = async (visitID) => {
     const visit = store.getVisit(visitID);
     if (!visit) return showToast('Visit not found.', 'error');
     const currentConsult = store.getVisits({ doctorID: visit.doctorID, date: visit.date })
@@ -40,20 +41,20 @@ export default function DoctorDashboard() {
     if (currentConsult) {
       return showToast('Doctor already has a patient in consultation. Complete current patient first.', 'warning');
     }
-    const result = store.updateVisitStatus(visitID, 'in-consultation');
+    const result = await store.updateVisitStatus(visitID, 'in-consultation');
     if (result.error) showToast(result.error, 'error');
     else showToast(`Consultation started for ${store.getPatient(visit.patientID)?.name || 'patient'}.`, 'info');
   };
 
-  const moveToAssessment = (visitID) => {
-    const result = store.updateVisitStatus(visitID, 'assessment');
+  const moveToAssessment = async (visitID) => {
+    const result = await store.updateVisitStatus(visitID, 'assessment');
     if (result.error) showToast(result.error, 'error');
     else showToast('Patient moved to assessment.', 'info');
   };
 
-  const completeConsultation = (visitID) => {
+  const completeConsultation = async (visitID) => {
     const visit = store.getVisit(visitID);
-    const result = store.updateVisitStatus(visitID, 'completed');
+    const result = await store.updateVisitStatus(visitID, 'completed');
     if (result.error) showToast(result.error, 'error');
     else {
       showToast('Consultation completed! ✅', 'success');
@@ -68,19 +69,16 @@ export default function DoctorDashboard() {
     }
   };
 
-  const markNoShow = (visitID) => {
-    const result = store.updateVisitStatus(visitID, 'no-show');
+  const markNoShow = async (visitID) => {
+    const result = await store.updateVisitStatus(visitID, 'no-show');
     if (result.error) showToast(result.error, 'error');
     else showToast('Patient marked as No Show.', 'warning');
   };
 
-  const markNoShowByAppointment = (appointmentID) => {
-    const apt = store.getAppointment(appointmentID);
-    if (!apt) return;
-    apt.status = 'no-show';
-    store._save();
-    eventBus.emit('appointment:updated', apt);
-    showToast('Patient marked as No Show.', 'warning');
+  const markNoShowByAppointment = async (appointmentID) => {
+    const result = await store.updateAppointmentStatus(appointmentID, 'no-show');
+    if (result.error) showToast(result.error, 'error');
+    else showToast('Patient marked as No Show.', 'warning');
   };
 
   return (
@@ -88,27 +86,38 @@ export default function DoctorDashboard() {
       <div className="page-header">
         <div>
           <h2>🩺 Doctor Session Dashboard</h2>
-          <p className="page-subtitle">{formatDate(today)} — Daily patient schedule and consultation management</p>
+          <p className="page-subtitle">{formatDate(selectedDate)} — Daily patient schedule and consultation management</p>
         </div>
-        <div className="flex items-center gap-12">
-          <label className="form-label" style={{ margin: 0 }}>Doctor:</label>
-          <select
-            className="form-select"
-            id="doctor-select"
-            style={{ width: 220 }}
-            value={selectedDoctorID}
-            onChange={(e) => setSelectedDoctorID(e.target.value)}
-          >
-            {store.getDoctors().map(d => {
-              const dp = store.getDepartment(d.departmentID);
-              return (
-                <option key={d.doctorID} value={d.doctorID}>
-                  {d.name} — {dp?.name || ''}
-                </option>
-              );
-            })}
-          </select>
-        </div>
+      </div>
+
+      <div className="flex items-center gap-12 mb-16" style={{ padding: '0 0 16px 0' }}>
+        <label className="form-label" style={{ margin: 0 }}>Doctor:</label>
+        <select
+          className="form-select"
+          id="doctor-select"
+          style={{ width: 220 }}
+          value={selectedDoctorID}
+          onChange={(e) => setSelectedDoctorID(e.target.value)}
+        >
+          {store.getDoctors().map(d => {
+            const dp = store.getDepartment(d.departmentID);
+            return (
+              <option key={d.doctorID} value={d.doctorID}>
+                {d.name} — {dp?.name || ''}
+              </option>
+            );
+          })}
+        </select>
+
+        <label className="form-label" style={{ margin: 0 }}>Date:</label>
+        <input
+          type="date"
+          className="form-input"
+          value={selectedDate}
+          min={today}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          style={{ width: 170 }}
+        />
       </div>
 
       {/* Session Stats */}
@@ -191,7 +200,7 @@ export default function DoctorDashboard() {
       {/* Patient List */}
       <div className="card mt-24">
         <div className="card-header">
-          <h3>📋 Today's Patients</h3>
+          <h3>📋 {selectedDate === today ? "Today's Patients" : `${formatDateShort(selectedDate)} Patients`}</h3>
           <span className="text-sm text-muted">{appointments.length} appointments</span>
         </div>
         <div className="table-wrap">
@@ -201,7 +210,7 @@ export default function DoctorDashboard() {
             </thead>
             <tbody>
               {appointments.length === 0 ? (
-                <tr><td colSpan="6" className="text-muted" style={{ textAlign: 'center', padding: 24 }}>No appointments for today</td></tr>
+                <tr><td colSpan="6" className="text-muted" style={{ textAlign: 'center', padding: 24 }}>{selectedDate === today ? 'No appointments for today' : `No appointments for ${formatDateShort(selectedDate)}`}</td></tr>
               ) : appointments.map((apt, i) => {
                 const pat = store.getPatient(apt.patientID);
                 const visit = visits.find(v => v.appointmentID === apt.appointmentID);
@@ -232,7 +241,7 @@ export default function DoctorDashboard() {
                           </>
                         )}
                         {visit?.flowStatus === 'assessment' && <button className="btn btn-success btn-xs" onClick={() => completeConsultation(visit.visitID)}>✅ Done</button>}
-                        {flowStatus === 'new-entry' && apt.status === 'scheduled' && <button className="btn btn-outline btn-xs" onClick={() => markNoShowByAppointment(apt.appointmentID)}>❌ No Show</button>}
+                        {flowStatus === 'new-entry' && apt.status === 'requested' && <button className="btn btn-outline btn-xs" onClick={() => markNoShowByAppointment(apt.appointmentID)}>❌ No Show</button>}
                         {visit && ['waiting', 'checked-in'].includes(visit.flowStatus) && <button className="btn btn-outline btn-xs" onClick={() => markNoShow(visit.visitID)}>❌ No Show</button>}
                       </div>
                     </td>

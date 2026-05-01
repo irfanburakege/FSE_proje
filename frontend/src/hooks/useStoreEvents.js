@@ -13,7 +13,8 @@ export function useStoreEvents(events = []) {
   const { eventBus, forceUpdate } = useStore();
 
   useEffect(() => {
-    const unsubs = events.map(event => eventBus.on(event, forceUpdate));
+    const allEvents = [...events, 'store:updated'];
+    const unsubs = allEvents.map(event => eventBus.on(event, forceUpdate));
     return () => unsubs.forEach(unsub => unsub());
   }, [eventBus, forceUpdate, events.join(',')]);
 }

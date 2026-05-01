@@ -19,9 +19,9 @@ export default function MyAppointments({ onSwitchToBook }) {
     return a.timeSlot > b.timeSlot ? -1 : 1;
   });
 
-  const handleCancel = (appointmentID) => {
+  const handleCancel = async (appointmentID) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
-      const result = store.cancelAppointment(appointmentID);
+      const result = await store.cancelAppointment(appointmentID);
       if (result.error) showToast(result.error, 'error');
       else showToast('Appointment cancelled.', 'success');
     }
@@ -72,7 +72,7 @@ export default function MyAppointments({ onSwitchToBook }) {
               {appointments.map(apt => {
                 const doc = store.getDoctor(apt.doctorID);
                 const dept = store.getDepartment(apt.departmentID);
-                const canModify = apt.status === 'scheduled';
+                const canModify = ['requested', 'confirmed'].includes(apt.status);
                 return (
                   <tr key={apt.appointmentID}>
                     <td><code className="text-xs">{apt.appointmentID}</code></td>
@@ -111,9 +111,9 @@ function RescheduleModal({ apt, doc, dept, store, showToast, closeModal }) {
   const dates = getWeekdayDates(10);
   const slots = selectedDate ? store.getAvailableSlots(apt.doctorID, selectedDate) : [];
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!selectedSlot || !selectedDate) return;
-    const result = store.rescheduleAppointment(apt.appointmentID, selectedDate, selectedSlot.startTime, selectedSlot.endTime);
+    const result = await store.rescheduleAppointment(apt.appointmentID, selectedDate, selectedSlot.startTime, selectedSlot.endTime);
     if (result.error) showToast(result.error, 'error');
     else {
       showToast('Appointment rescheduled!', 'success');
@@ -125,6 +125,9 @@ function RescheduleModal({ apt, doc, dept, store, showToast, closeModal }) {
     <>
       <div className="modal-title">🔄 Reschedule Appointment</div>
       <p className="text-sm text-muted mb-16">{doc?.name} · {dept?.name}</p>
+      <p className="text-sm text-muted mb-16">
+        Current: {formatDate(apt.date)} · {formatTime(apt.timeSlot)}
+      </p>
 
       <div className="form-group">
         <label className="form-label">New Date</label>
@@ -143,14 +146,22 @@ function RescheduleModal({ apt, doc, dept, store, showToast, closeModal }) {
       {selectedDate && slots.length > 0 && (
         <div className="time-grid compact">
           {slots.map(s => (
-            <button
-              key={s.startTime}
-              className={`time-btn ${!s.isAvailable ? 'booked' : ''} ${selectedSlot?.startTime === s.startTime ? 'selected' : ''}`}
-              disabled={!s.isAvailable}
-              onClick={() => setSelectedSlot(s)}
-            >
-              {formatTime(s.startTime)}
-            </button>
+            (() => {
+              const isCurrentSlot = selectedDate === apt.date && s.startTime === apt.timeSlot;
+              const isDisabled = !s.isAvailable || isCurrentSlot;
+              return (
+                <button
+                  key={s.startTime}
+                  className={`time-btn ${isDisabled ? 'booked' : ''} ${selectedSlot?.startTime === s.startTime ? 'selected' : ''}`}
+                  disabled={isDisabled}
+                  onClick={() => setSelectedSlot(s)}
+                  title={isCurrentSlot ? 'Current appointment slot' : undefined}
+                >
+                  {formatTime(s.startTime)}
+                  {isCurrentSlot && <span className="booked-label">Current</span>}
+                </button>
+              );
+            })()
           ))}
         </div>
       )}

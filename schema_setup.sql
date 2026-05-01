@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS audit_logs CASCADE;
 DROP TABLE IF EXISTS lab_tests CASCADE;
 DROP TABLE IF EXISTS imaging_exams CASCADE;
@@ -100,4 +101,13 @@ CREATE TABLE audit_logs (
     action VARCHAR(255) NOT NULL,
     details TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- NOTIFICATIONS
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('email', 'sms', 'system')),
+    title VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

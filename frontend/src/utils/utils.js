@@ -26,6 +26,11 @@ export function formatDateFull(dateStr) {
   return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
+export function formatDateShort(dateStr) {
+  const [year, month, day] = dateStr.split('-');
+  return `${day}.${month}.${year.slice(2)}`;
+}
+
 export function formatTime(time) {
   const [hours, minutes] = time.split(':');
   const h = parseInt(hours);
@@ -106,4 +111,25 @@ export function waitMinutes(timestamp) {
   const diff = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000));
   if (diff < 60) return `${diff} min`;
   return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+}
+
+/* ── Department icon helper ── */
+export function getDepartmentIcon(iconName) {
+  if (!iconName) return '🏥';
+  const key = String(iconName).trim().toLowerCase();
+  const iconMap = {
+    'heart-pulse': '❤️',
+    'heart': '❤️',
+    'brain': '🧠',
+    'truck-medical': '🚑',
+    'stethoscope': '🩺',
+    'activity': '📈',
+    'hospital': '🏥',
+    'syringe': '💉',
+    'baby': '👶',
+    'scan': '🧾',
+    'eye': '👁️',
+    'bone': '🦴',
+  };
+  return iconMap[key] || '🏥';
 }

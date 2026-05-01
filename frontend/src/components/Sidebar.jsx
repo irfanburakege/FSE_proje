@@ -4,7 +4,6 @@
  */
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useStore } from '../context/StoreContext.jsx';
 
 const NAV_ITEMS = [
   { section: 'Main Modules', items: [
@@ -22,7 +21,6 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar() {
-  const { store, showToast, forceUpdate } = useStore();
   const [clock, setClock] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
 
@@ -34,14 +32,6 @@ export default function Sidebar() {
     const interval = setInterval(updateClock, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleReset = () => {
-    if (window.confirm('Reset all demo data to defaults?')) {
-      store.reset();
-      showToast('Demo data has been reset.', 'success');
-      forceUpdate();
-    }
-  };
 
   return (
     <aside id="sidebar" className={isCollapsed ? 'collapsed' : ''}>
@@ -78,9 +68,6 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <div className="sidebar-clock" id="sidebar-clock">{clock}</div>
-        <button id="reset-demo-btn" className="btn btn-reset" onClick={handleReset} title="Reset Demo Data">
-          🔄 <span>Reset Demo Data</span>
-        </button>
       </div>
     </aside>
   );
