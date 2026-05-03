@@ -102,6 +102,8 @@ async function seedDatabase() {
     // Hedeflenen tarihler: 04.05.2026 - 08.05.2026
     // JavaScript'te aylar 0'dan başlar (Ocak=0, ... Mayıs=4)
     const workDays = [
+      new Date(2026, 4, 2),
+      new Date(2026, 4, 3),
       new Date(2026, 4, 4),
       new Date(2026, 4, 5),
       new Date(2026, 4, 6),
