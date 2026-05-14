@@ -25,7 +25,8 @@ CREATE TABLE users (
 CREATE TABLE departments (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    icon VARCHAR(50)
+    icon VARCHAR(50),
+    slot_duration INTEGER NOT NULL DEFAULT 15
 );
 
 -- DOCTORS
@@ -45,6 +46,7 @@ CREATE TABLE nurses (
 -- PATIENT INFO
 CREATE TABLE patients (
     id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     national_id VARCHAR(20) UNIQUE,
     phone_number VARCHAR(20)
@@ -92,6 +94,16 @@ CREATE TABLE imaging_exams (
     exam_type VARCHAR(100),
     status VARCHAR(20) DEFAULT 'Pending' CHECK (status IN ('Pending', 'In Progress', 'Completed')),
     assigned_nurse_id INTEGER REFERENCES nurses(id)
+);
+
+CREATE TABLE doctor_schedules (
+    id SERIAL PRIMARY KEY,
+    doctor_id INTEGER REFERENCES doctors(id) ON DELETE CASCADE,
+    day_of_week INTEGER CHECK (day_of_week BETWEEN 0 AND 6),
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    is_available BOOLEAN DEFAULT TRUE,
+    UNIQUE(doctor_id, day_of_week)
 );
 
 -- AUDIT LOGS

@@ -1,6 +1,6 @@
 ALTER TABLE users
 ADD CONSTRAINT chk_user_role
-CHECK (role IN ('Hospital Administrator', 'Reception Desk', 'Doctor Session', 'Nurse Assistant'));
+CHECK (role IN ('Hospital Administrator', 'Reception Desk', 'Doctor Session', 'Nurse Assistant', 'Patient'));
 
 
 ALTER TABLE appointments
